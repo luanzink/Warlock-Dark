@@ -16,4 +16,8 @@ public class BackgroundFollow : MonoBehaviour
     {
         transform.position = new Vector3(player.transform.position.x, player.transform.position.y, 12);
     }
+
+    void ChangeAlpha() { 
+
+    }
 }

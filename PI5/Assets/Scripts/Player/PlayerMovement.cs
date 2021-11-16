@@ -7,14 +7,21 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private GameObject escudo;
     public LifeManaManager manager;
+    public Transform firePoint;
+    public GameObject projectilePrefab;
 
+    //Variáveis de movimento e mecânicas---------------
+    [Header("Variaveis")]
+    #region
     public float speed = 30;
     public float jumpForce = 6;
     private float moveInput;
     private bool xFacingRight = true;
     private int direcion = 1;
-    //public float fallMultiplier = 2.5f;
-    //public float lowJumpMultiplier = 2f;
+    #endregion
+
+
+
     private float jumpTimeCounter;
     public float jumpTime;
     public bool isJumping;
@@ -22,13 +29,21 @@ public class PlayerMovement : MonoBehaviour
 
     public Animator anim;
    
-    
+    //Física----------------------------
     private Rigidbody2D rb;
-
     public GameObject groundCheck;
     public bool isGrounded = false;
 
     public float mana;
+
+    //Ataque
+    [Header("Attack")]
+    private float timeBtwAttack;
+    public float startTimeBtwAttack;
+    public Transform attackPos;
+    public float attackRange;
+    public LayerMask isEnemy;
+    public int damage;
 
     //Checagem na parede:
     [Header("OnWall")]
@@ -45,24 +60,26 @@ public class PlayerMovement : MonoBehaviour
 
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
+        rb = GetComponent<Rigidbody2D>();        
     }
 
 
     void FixedUpdate()
     {
-        GroundMovement();
+        GroundMovement();        
     }
 
 
     private void Update()
     {
+        AttackButton();
         CuraLife();
         Mana();
         Escudo();
-        AirMovement();
         PhysicsCheck();
         checkCanMove();
+        AirMovement();
+        Shoot();
 
         if(Input.GetAxis("Horizontal") != 0)
         {
@@ -77,10 +94,38 @@ public class PlayerMovement : MonoBehaviour
             Flip();
         else if (Input.GetAxis("Horizontal") < 0 && xFacingRight)
             Flip();
+
     }
     void Mana()
     {
         mana = manager.GetComponent<LifeManaManager>().actualMana;
+    }
+    public void AttackButton()
+    {
+        if (timeBtwAttack <= 0)
+        {
+            if (Input.GetKeyDown(KeyCode.Z))
+            {
+                Attack();
+                timeBtwAttack = startTimeBtwAttack;
+                //Debug.Log(GetComponent<EnemyScript>().health);
+            }
+
+        }
+        else
+        {
+            timeBtwAttack -= Time.deltaTime;
+        }
+    }
+    public void Attack()
+    {
+        anim.SetTrigger("attack");
+        Collider2D[] enemiesToDamage = Physics2D.OverlapCircleAll(attackPos.position, attackRange, isEnemy);
+
+        foreach(Collider2D enemy in enemiesToDamage)
+        {
+            enemy.GetComponent<EnemyScript>().TakeDamage(damage);
+        }
     }
     void CuraLife()
     { 
@@ -129,7 +174,8 @@ public class PlayerMovement : MonoBehaviour
         {
             //isJumping = true;
             //jumpTimeCounter = jumpTime;
-            rb.velocity = Vector2.up * jumpForce;
+            //rb.velocity = Vector2.up * jumpForce;
+            rb.AddForce(new Vector2(0, jumpForce), ForceMode2D.Impulse);
 
             anim.SetBool("pulando", true);
         }
@@ -193,19 +239,23 @@ public class PlayerMovement : MonoBehaviour
     void PhysicsCheck()
     {
         onWall = false;
+        anim.SetBool("wall", false);
 
         bool rightWall = Physics2D.OverlapCircle(transform.position + new Vector3(wallOffset.x, 0), wallRadius, wallLayer);
         bool LeftWall = Physics2D.OverlapCircle(transform.position + new Vector3(-wallOffset.x, 0), wallRadius, wallLayer);
 
         if(rightWall || LeftWall)
         {
+            
             onWall = true;
         }
 
         if (onWall)
         {
-            if(rb.velocity.y < maxFallSpeed)
+            anim.SetBool("wall", true);
+            if (rb.velocity.y < maxFallSpeed)
             {
+              
                 rb.velocity = new Vector2(rb.velocity.x, maxFallSpeed);
             }
         }
@@ -219,6 +269,11 @@ public class PlayerMovement : MonoBehaviour
 
 
     }
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(attackPos.position, attackRange);
+    }
 
     //Metodo para flipagem do personagem:
     private void Flip()
@@ -227,6 +282,28 @@ public class PlayerMovement : MonoBehaviour
         xFacingRight = !xFacingRight;
 
         transform.Rotate(0f, 180f, 0);
+    }
+
+    void Shoot()
+    {
+        if (Input.GetKeyDown(KeyCode.C) && mana >= 15f)
+        {
+            manager.ReduceMana(15f);
+            Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+        }
+    }
+
+    public void Impulse( float x, float y)
+    {
+        rb.AddForce(new Vector2(x, y), ForceMode2D.Impulse);
+    }
+
+    private void OnCollisionEnter2D(Collision2D col)
+    {
+        if (col.gameObject.CompareTag("Enemy"))
+        {
+            manager.Damage(25);
+        }
     }
 
 }

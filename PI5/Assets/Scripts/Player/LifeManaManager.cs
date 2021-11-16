@@ -34,9 +34,10 @@ public class LifeManaManager : MonoBehaviour
 
         if (actualMana < totalMP)
         {           
-            manaBar.fillAmount = Mathf.MoveTowards(manaBar.fillAmount, 1f, Time.deltaTime * 0.01f);
-            actualMana = Mathf.MoveTowards(actualMana / totalMP, 1f, Time.deltaTime * 0.01f) * totalMP;
-
+            manaBar.fillAmount = Mathf.MoveTowards(manaBar.fillAmount, 1f, Time.deltaTime * 0.07f);
+            actualMana = Mathf.MoveTowards(actualMana / totalMP, 1f, Time.deltaTime * 0.07f) * totalMP;
+            //if (actualMana == totalMP)
+                //manaBar.fillAmount = Mathf.MoveTowards(actualMana, 1F, Time.deltaTime*0.1f);
         }
 
         if(actualMana < 0)
@@ -65,7 +66,7 @@ public class LifeManaManager : MonoBehaviour
         if (manaCost <= actualMana)
         {
             actualMana -= manaCost;
-            manaBar.fillAmount -= manaCost / actualMana;
+            manaBar.fillAmount = actualMana/ totalMP;            
             //enoughMana = true;
         }
         

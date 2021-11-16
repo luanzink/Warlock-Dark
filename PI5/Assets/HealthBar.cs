@@ -5,23 +5,39 @@ using UnityEngine.UI;
 
 public class HealthBar : MonoBehaviour
 {
-    public Slider slider;
-    public Color low;
-    public Color high;
-    public Vector3 offset;
+    [SerializeField]
+    private Image foreground;
+    [SerializeField]
+    private float updateSpeedSeconds = 0.5f;
 
-    public void SetHealth(float health, float maxHealth)
+    private void Awake()
     {
-        slider.gameObject.SetActive(health < maxHealth);
-        slider.value = health;
-        slider.maxValue = maxHealth;
+        GetComponentInParent<EnemyScript>().OnHealthPctChanged += HandleHealthChanged;
+    }
 
-        slider.fillRect.GetComponentInChildren<Image>().color = Color.Lerp(low, high, slider.normalizedValue);
+
+    private void HandleHealthChanged(float pct)
+    {
+        StartCoroutine(ChangeToPct(pct));
+    }
+
+    private IEnumerator ChangeToPct(float pct)
+    {
+        float preChangePct = foreground.fillAmount;
+        float elapsed = 0f;
+
+        while (elapsed < updateSpeedSeconds)
+        {
+            elapsed += Time.deltaTime;
+            foreground.fillAmount = Mathf.Lerp(preChangePct, pct, elapsed / updateSpeedSeconds);
+            yield return null;
+        }
+        foreground.fillAmount = pct;
     }
 
 
     void Update()
     {
-        slider.transform.position = Camera.main.WorldToScreenPoint(transform.parent.position + offset);
+        
     }
 }
